@@ -285,6 +285,7 @@ def index():
             print(f"✅ Creado: {archivo}")
 
 # Crear aplicación
+app = create_app()
 if __name__ == '__main__':
     # Crear archivos de blueprints si no existen
     crear_archivos_blueprints()
