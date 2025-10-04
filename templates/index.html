@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-bar me-2 text-primary"></i>
+            Centro de Reportes
+        </h1>
+        <p class="text-muted mb-0">Generar y exportar reportes de pagos estudiantiles</p>
+    </div>
+    <div>
+        <button class="btn btn-outline-info" onclick="mostrarEstadisticasGenerales()">
+            <i class="fas fa-info-circle me-2"></i>
+            Estadísticas Generales
+        </button>
+    </div>
+</div>
+
+<!-- Filtros globales -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>
+            Filtros de Periodo
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="filtrosForm">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="mes" class="form-label">Mes</label>
+                    <select class="form-select" id="mes" name="mes">
+                        <option value="January">Enero</option>
+                        <option value="February">Febrero</option>
+                        <option value="March">Marzo</option>
+                        <option value="April">Abril</option>
+                        <option value="May">Mayo</option>
+                        <option value="June">Junio</option>
+                        <option value="July">Julio</option>
+                        <option value="August" selected>Agosto</option>
+                        <option value="September">Septiembre</option>
+                        <option value="October">Octubre</option>
+                        <option value="November">Noviembre</option>
+                        <option value="December">Diciembre</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="anio" class="form-label">Año</label>
+                    <select class="form-select" id="anio" name="anio">
+                        <option value="2025" selected>2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="grado_filtro" class="form-label">Grado (Opcional)</label>
+                    <select class="form-select" id="grado_filtro" name="grado_id">
+                        <option value="">Todos los grados</option>
+                        <!-- Se llenará dinámicamente -->
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reportes disponibles -->
+<div class="row">
+    <!-- Reporte por grado -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-pie fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">Resumen por Grado</h5>
+                <p class="card-text">Estadísticas de pagos agrupadas por grado académico</p>
+                
+                <div class="d-grid gap-2">
+                    <button onclick="verReportePorGrado()" class="btn btn-primary">
+                        <i class="fas fa-eye me-2"></i>
+                        Ver Reporte
+                    </button>
+                    <button onclick="exportarResumenGrados()" class="btn btn-outline-success">
+                        <i class="fas fa-download me-2"></i>
+                        Exportar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estudiantes morosos -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <h5 class="card-title">Estudiantes Morosos</h5>
+                <p class="card-text">Lista de estudiantes con pagos pendientes</p>
+                
+                <div class="d-grid gap-2">
+                    <button onclick="verReporteMorosos()" class="btn btn-danger">
+                        <i class="fas fa-eye me-2"></i>
+                        Ver Lista
+                    </button>
+                    <button onclick="exportarMorosos()" class="btn btn-outline-success">
+                        <i class="fas fa-download me-2"></i>
+                        Exportar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estudiantes al día -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">Estudiantes al Día</h5>
+                <p class="card-text">Lista de estudiantes con pagos al corriente</p>
+                
+                <div class="d-grid gap-2">
+                    <button onclick="verReporteAlDia()" class="btn btn-success">
+                        <i class="fas fa-eye me-2"></i>
+                        Ver Lista
+                    </button>
+                    <button onclick="exportarAlDia()" class="btn btn-outline-success">
+                        <i class="fas fa-download me-2"></i>
+                        Exportar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reportes adicionales -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            Reportes Personalizados
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">Reportes por Estudiante</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <button class="btn btn-outline-primary btn-sm me-2" onclick="generarReporteIndividual()">
+                            <i class="fas fa-user me-1"></i>
+                            Reporte Individual
+                        </button>
+                        Historial de pagos de un estudiante específico
+                    </li>
+                    <li class="mb-2">
+                        <button class="btn btn-outline-info btn-sm me-2" onclick="generarReporteHistorial()">
+                            <i class="fas fa-history me-1"></i>
+                            Historial Completo
+                        </button>
+                        Todos los pagos por periodo
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h6 class="text-success">Reportes Financieros</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <button class="btn btn-outline-success btn-sm me-2" onclick="generarReporteRecaudacion()">
+                            <i class="fas fa-money-bill-wave me-1"></i>
+                            Recaudación Mensual
+                        </button>
+                        Ingresos por mes y forma de pago
+                    </li>
+                    <li class="mb-2">
+                        <button class="btn btn-outline-warning btn-sm me-2" onclick="generarReporteComparativo()">
+                            <i class="fas fa-chart-line me-1"></i>
+                            Comparativo Anual
+                        </button>
+                        Evolución de pagos por año
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de estadísticas generales -->
+<div class="modal fade" id="modalEstadisticas" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Estadísticas Generales del Sistema
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="estadisticasContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para reporte individual -->
+<div class="modal fade" id="modalReporteIndividual" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user me-2"></i>
+                    Reporte Individual
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formReporteIndividual">
+                    <div class="mb-3">
+                        <label for="carnet_estudiante" class="form-label">Carnet del Estudiante</label>
+                        <input type="number" class="form-control" id="carnet_estudiante" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="periodo_desde" class="form-label">Desde (Año)</label>
+                        <select class="form-select" id="periodo_desde">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="periodo_hasta" class="form-label">Hasta (Año)</label>
+                        <select class="form-select" id="periodo_hasta">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="procesarReporteIndividual()">
+                    <i class="fas fa-file-pdf me-2"></i>
+                    Generar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar grados para el filtro
+    cargarGrados();
+    
+    // Establecer fecha actual
+    const ahora = new Date();
+    const mesActual = ahora.toLocaleString('en-US', { month: 'long' });
+    document.getElementById('mes').value = mesActual;
+    document.getElementById('anio').value = ahora.getFullYear();
+});
+
+function cargarGrados() {
+    // Esta función se puede conectar a un API para cargar grados dinámicamente
+    const selectGrado = document.getElementById('grado_filtro');
+    const grados = [
+        {id: 1, nombre: 'Kinder'},
+        {id: 2, nombre: 'Párvulos'},
+        {id: 3, nombre: 'Preparatoria'},
+        {id: 4, nombre: '1° Primaria'},
+        {id: 5, nombre: '2° Primaria'},
+        {id: 6, nombre: '3° Primaria'},
+        {id: 7, nombre: 'Básicos'},
+        {id: 8, nombre: 'Diversificado'}
+    ];
+    
+    grados.forEach(grado => {
+        const option = document.createElement('option');
+        option.value = grado.id;
+        option.textContent = grado.nombre;
+        selectGrado.appendChild(option);
+    });
+}
+
+function obtenerParametrosFiltro() {
+    const mes = document.getElementById('mes').value;
+    const anio = document.getElementById('anio').value;
+    const grado_id = document.getElementById('grado_filtro').value;
+    
+    let params = `mes=${mes}&anio=${anio}`;
+    if (grado_id) {
+        params += `&grado_id=${grado_id}`;
+    }
+    
+    return params;
+}
+
+function verReportePorGrado() {
+    const params = obtenerParametrosFiltro();
+    window.open(`/reportes/por-grado?${params}`, '_blank');
+}
+
+function verReporteMorosos() {
+    const params = obtenerParametrosFiltro();
+    window.open(`/reportes/morosos?${params}`, '_blank');
+}
+
+function verReporteAlDia() {
+    const params = obtenerParametrosFiltro();
+    window.open(`/reportes/al-dia?${params}`, '_blank');
+}
+
+function exportarResumenGrados() {
+    const params = obtenerParametrosFiltro();
+    window.location.href = `/reportes/exportar/resumen-grados?${params}`;
+}
+
+function exportarMorosos() {
+    const params = obtenerParametrosFiltro();
+    window.location.href = `/reportes/exportar/morosos?${params}`;
+}
+
+function exportarAlDia() {
+    const params = obtenerParametrosFiltro();
+    window.location.href = `/reportes/exportar/al-dia?${params}`;
+}
+
+function mostrarEstadisticasGenerales() {
+    const modal = new bootstrap.Modal(document.getElementById('modalEstadisticas'));
+    modal.show();
+    
+    // Cargar estadísticas
+    fetch('/reportes/api/estadisticas-generales')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarEstadisticas(data);
+            } else {
+                document.getElementById('estadisticasContent').innerHTML = 
+                    '<div class="alert alert-danger">Error cargando estadísticas</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('estadisticasContent').innerHTML = 
+                '<div class="alert alert-danger">Error de conexión</div>';
+        });
+}
+
+function mostrarEstadisticas(data) {
+    const stats = data.estadisticas;
+    const historial = data.recaudacion_historica;
+    
+    let html = `
+        <div class="row mb-4">
+            <div class="col-md-3 text-center">
+                <h3 class="text-primary">${stats.total_estudiantes}</h3>
+                <small class="text-muted">Total Estudiantes</small>
+            </div>
+            <div class="col-md-3 text-center">
+                <h3 class="text-success">${stats.estudiantes_al_dia}</h3>
+                <small class="text-muted">Al Día</small>
+            </div>
+            <div class="col-md-3 text-center">
+                <h3 class="text-danger">${stats.estudiantes_morosos}</h3>
+                <small class="text-muted">Morosos</small>
+            </div>
+            <div class="col-md-3 text-center">
+                <h3 class="text-info">Q${stats.recaudacion_mes.toLocaleString()}</h3>
+                <small class="text-muted">Recaudación ${stats.mes_actual}</small>
+            </div>
+        </div>
+        
+        <div class="progress mb-3" style="height: 25px;">
+            <div class="progress-bar bg-success" style="width: ${stats.porcentaje_al_dia}%">
+                Al Día ${stats.porcentaje_al_dia}%
+            </div>
+            <div class="progress-bar bg-danger" style="width: ${stats.porcentaje_morosos}%">
+                Morosos ${stats.porcentaje_morosos}%
+            </div>
+        </div>
+        
+        <h6 class="text-muted">Historial de Recaudación</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Año</th>
+                        <th>Mes</th>
+                        <th>Recaudación</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    historial.forEach(item => {
+        html += `
+            <tr>
+                <td>${item.anio}</td>
+                <td>${item.mes}</td>
+                <td class="text-end">Q${item.recaudacion.toLocaleString()}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    document.getElementById('estadisticasContent').innerHTML = html;
+}
+
+function generarReporteIndividual() {
+    const modal = new bootstrap.Modal(document.getElementById('modalReporteIndividual'));
+    modal.show();
+}
+
+function procesarReporteIndividual() {
+    const carnet = document.getElementById('carnet_estudiante').value;
+    const periodoDesde = document.getElementById('periodo_desde').value;
+    const periodoHasta = document.getElementById('periodo_hasta').value;
+    
+    if (!carnet) {
+        return alert('Ingrese el carnet del estudiante');
+    }
+    
+    const params = `carnet=${carnet}&desde=${periodoDesde}&hasta=${periodoHasta}`;
+    const url = `/reportes/exportar/individual?${params}`;
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalReporteIndividual'));
+    modal.hide();
+    
+    // Descargar reporte
+    window.location.href = url;
+}
+</script>
+{% endblock %}

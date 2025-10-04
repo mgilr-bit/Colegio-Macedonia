@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-cog me-2 text-primary"></i>
+        Configuración del Sistema
+    </h1>
+    <p class="text-muted mb-0">Configuración de cuotas y parámetros generales</p>
+</div>
+
+<!-- Resumen del sistema -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-graduation-cap fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ total_grados }}</h3>
+                <small>Grados Activos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ total_estudiantes }}</h3>
+                <small>Estudiantes Activos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-user-shield fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ current_user.username }}</h3>
+                <small>Coordinador</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuración de cuotas por grado -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-money-bill-wave me-2"></i>
+            Cuotas Mensuales por Grado
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Configura las cuotas mensuales predeterminadas para cada grado.
+            Los estudiantes pueden tener cuotas personalizadas que sobrescriben estos valores.
+        </p>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Grado</th>
+                        <th>Nivel</th>
+                        <th class="text-center">Estudiantes</th>
+                        <th class="text-end">Cuota Mensual</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grado in grados %}
+                    <tr>
+                        <td><strong>{{ grado.nombre }}</strong></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ grado.nivel|title }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">{{ grado.total_estudiantes }}</span>
+                        </td>
+                        <td class="text-end">
+                            <strong>Q{{ "%.2f"|format(grado.cuota_mensual) }}</strong>
+                        </td>
+                        <td>
+                            {% if grado.activo %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEditarGrado{{ grado.id }}">
+                                <i class="fas fa-edit"></i>
+                                Editar Cuota
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Modal para editar cuota -->
+                    <div class="modal fade" id="modalEditarGrado{{ grado.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-edit me-2"></i>
+                                        Editar Cuota: {{ grado.nombre }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('usuarios.editar_grado', grado_id=grado.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Grado</label>
+                                            <input type="text" class="form-control" value="{{ grado.nombre }}" disabled>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Cuota Mensual Actual</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Q</span>
+                                                <input type="text" class="form-control"
+                                                       value="{{ '%.2f'|format(grado.cuota_mensual) }}" disabled>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="cuota{{ grado.id }}" class="form-label">
+                                                Nueva Cuota Mensual <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Q</span>
+                                                <input type="number" class="form-control" id="cuota{{ grado.id }}"
+                                                       name="cuota_mensual" step="0.01" min="0"
+                                                       value="{{ grado.cuota_mensual }}" required>
+                                            </div>
+                                            <small class="text-muted">
+                                                Esta cuota se aplicará a todos los estudiantes de {{ grado.nombre }}
+                                                que no tengan cuota personalizada.
+                                            </small>
+                                        </div>
+
+                                        <div class="alert alert-warning mb-0">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <small>
+                                                Los estudiantes con cuota personalizada no se verán afectados.
+                                                Actualmente hay <strong>{{ grado.total_estudiantes }}</strong>
+                                                estudiantes en este grado.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Información del sistema -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información del Colegio
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted small">Nombre del Colegio</label>
+                    <p class="mb-0"><strong>{{ app_name }}</strong></p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small">Total de Grados</label>
+                    <p class="mb-0"><strong>{{ total_grados }}</strong></p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small">Total de Estudiantes</label>
+                    <p class="mb-0"><strong>{{ total_estudiantes }}</strong></p>
+                </div>
+
+                <div class="mb-0">
+                    <label class="text-muted small">Cuota Promedio</label>
+                    <p class="mb-0">
+                        <strong>Q{{ "%.2f"|format(grados|map(attribute='cuota_mensual')|sum / grados|length if grados|length > 0 else 0) }}</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    Acciones Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('usuarios.lista') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users-cog me-2"></i>
+                        Gestionar Usuarios
+                    </a>
+
+                    <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-success">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Ver Reportes
+                    </a>
+
+                    <a href="{{ url_for('estudiantes.lista') }}" class="btn btn-outline-info">
+                        <i class="fas fa-users me-2"></i>
+                        Ver Estudiantes
+                    </a>
+
+                    <a href="{{ url_for('dashboard.panel') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>
+                        Ir al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar formularios de cuota
+    const forms = document.querySelectorAll('form[action*="editar"]');
+
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const input = this.querySelector('input[name="cuota_mensual"]');
+            const valor = parseFloat(input.value);
+
+            if (isNaN(valor) || valor <= 0) {
+                e.preventDefault();
+                alert('La cuota debe ser un valor mayor a 0');
+                input.focus();
+                return false;
+            }
+
+            return confirm(`¿Estás seguro de actualizar la cuota a Q${valor.toFixed(2)}?`);
+        });
+    });
+});
+</script>
+{% endblock %}

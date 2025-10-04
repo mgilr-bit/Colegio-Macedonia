@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-user-circle me-2 text-primary"></i>
+        Mi Perfil
+    </h1>
+    <p class="text-muted mb-0">Información personal y actividad</p>
+</div>
+
+<!-- Información del usuario -->
+<div class="row">
+    <!-- Columna izquierda -->
+    <div class="col-lg-8">
+        <!-- Información básica -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-id-card me-2"></i>
+                    Información Personal
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Usuario</label>
+                        <p class="mb-0"><strong>{{ current_user.username }}</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Nombre Completo</label>
+                        <p class="mb-0"><strong>{{ current_user.nombre }}</strong></p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Rol</label>
+                        <p class="mb-0">
+                            {% if current_user.es_coordinador %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-user-shield me-1"></i>
+                                Coordinador
+                            </span>
+                            {% elif current_user.es_secretaria %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-user-tie me-1"></i>
+                                Secretaria
+                            </span>
+                            {% else %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-user-graduate me-1"></i>
+                                Director
+                            </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Estado</label>
+                        <p class="mb-0">
+                            {% if current_user.activo %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Activo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-ban me-1"></i>
+                                Inactivo
+                            </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Fecha de Registro</label>
+                        <p class="mb-0">
+                            {{ current_user.fecha_creacion.strftime('%d de %B de %Y') if current_user.fecha_creacion else '-' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad reciente -->
+        {% if current_user.puede_cargar_archivos() %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Actividad Reciente
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if cargas_recientes %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Archivo</th>
+                                <th>Fecha</th>
+                                <th class="text-center">Procesados</th>
+                                <th class="text-center">Exitosos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carga in cargas_recientes %}
+                            <tr>
+                                <td>
+                                    <small>{{ carga.nombre_archivo[:40] }}...</small>
+                                </td>
+                                <td>
+                                    <small>{{ carga.fecha_carga.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ carga.registros_procesados }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ carga.registros_exitosos }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('pagos.historial') }}" class="btn btn-sm btn-outline-primary">
+                    Ver historial completo
+                    <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No has realizado cargas de archivos aún
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Permisos del usuario -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Permisos
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    {% if current_user.puede_gestionar_usuarios() %}
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Gestionar usuarios del sistema
+                    </li>
+                    {% endif %}
+
+                    {% if current_user.puede_cargar_archivos() %}
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Cargar archivos de pagos del banco
+                    </li>
+                    {% endif %}
+
+                    {% if current_user.puede_editar_estudiantes() %}
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Editar información de estudiantes
+                    </li>
+                    {% endif %}
+
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Ver reportes y estadísticas
+                    </li>
+
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Consultar información de estudiantes
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna derecha -->
+    <div class="col-lg-4">
+        <!-- Estadísticas rápidas -->
+        {% if current_user.puede_cargar_archivos() %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Mis Estadísticas
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                    <h3 class="mb-0">{{ total_cargas }}</h3>
+                    <small class="text-muted">Archivos Cargados</small>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h3 class="mb-0">{{ total_pagos_procesados }}</h3>
+                    <small class="text-muted">Pagos Procesados</small>
+                </div>
+
+                {% if ultima_carga %}
+                <hr>
+
+                <div>
+                    <small class="text-muted d-block mb-1">Última Actividad</small>
+                    <strong>{{ ultima_carga.fecha_carga.strftime('%d/%m/%Y') }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Acciones -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('usuarios.cambiar_password') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-key me-2"></i>
+                        Cambiar Contraseña
+                    </a>
+
+                    {% if current_user.puede_gestionar_usuarios() %}
+                    <a href="{{ url_for('usuarios.configuracion') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sliders-h me-2"></i>
+                        Configuración del Sistema
+                    </a>
+                    {% endif %}
+
+                    <a href="{{ url_for('dashboard.panel') }}" class="btn btn-outline-info">
+                        <i class="fas fa-home me-2"></i>
+                        Ir al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

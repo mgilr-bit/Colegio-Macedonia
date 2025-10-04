@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ estudiante.nombre }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('estudiantes.lista') }}">Estudiantes</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('estudiantes.detalle', carnet=estudiante.carnet) }}">{{ estudiante.carnet }}</a>
+            </li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-0">
+        <i class="fas fa-edit me-2 text-primary"></i>
+        Editar Estudiante
+    </h1>
+    <p class="text-muted mb-0">{{ estudiante.nombre }} - Carnet: {{ estudiante.carnet }}</p>
+</div>
+
+<!-- Formulario de edición -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Información del Estudiante
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('estudiantes.editar', carnet=estudiante.carnet) }}">
+                    <!-- Carnet (solo lectura) -->
+                    <div class="mb-3">
+                        <label for="carnet" class="form-label">Carnet</label>
+                        <input type="text" class="form-control" id="carnet"
+                               value="{{ estudiante.carnet }}" disabled>
+                        <small class="text-muted">El carnet no se puede modificar</small>
+                    </div>
+
+                    <!-- Nombre -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nombre" name="nombre"
+                               value="{{ estudiante.nombre }}" required>
+                    </div>
+
+                    <!-- Grado (solo coordinador) -->
+                    <div class="mb-3">
+                        <label for="grado_id" class="form-label">Grado</label>
+                        <select class="form-select" id="grado_id" name="grado_id"
+                                {{ 'disabled' if not current_user.es_coordinador else '' }}>
+                            {% for grado in grados %}
+                            <option value="{{ grado.id }}"
+                                    {{ 'selected' if grado.id == estudiante.grado_id else '' }}>
+                                {{ grado.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if not current_user.es_coordinador %}
+                        <small class="text-muted">Solo el coordinador puede cambiar el grado</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Sección -->
+                    <div class="mb-3">
+                        <label for="seccion" class="form-label">Sección</label>
+                        <input type="text" class="form-control" id="seccion" name="seccion"
+                               value="{{ estudiante.seccion or '' }}" placeholder="Ej: A, B, C">
+                        <small class="text-muted">Opcional</small>
+                    </div>
+
+                    <!-- Cuota Personalizada -->
+                    <div class="mb-3">
+                        <label for="cuota_personalizada" class="form-label">Cuota Mensual Personalizada</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Q</span>
+                            <input type="number" class="form-control" id="cuota_personalizada"
+                                   name="cuota_personalizada" step="0.01" min="0"
+                                   value="{{ estudiante.cuota_personalizada if estudiante.cuota_personalizada else '' }}"
+                                   placeholder="{{ estudiante.grado.cuota_mensual }}">
+                        </div>
+                        <small class="text-muted">
+                            Dejar vacío para usar la cuota del grado (Q{{ "%.2f"|format(estudiante.grado.cuota_mensual) }})
+                        </small>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="mb-4">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones"
+                                  rows="4" placeholder="Notas adicionales sobre el estudiante">{{ estudiante.observaciones or '' }}</textarea>
+                        <small class="text-muted">Información adicional o notas especiales</small>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('estudiantes.detalle', carnet=estudiante.carnet) }}"
+                           class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de información -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información Actual
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Datos Actuales:</h6>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Grado:</small>
+                    <strong>{{ estudiante.grado.nombre }}</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Sección:</small>
+                    <strong>{{ estudiante.seccion if estudiante.seccion else 'Sin asignar' }}</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Cuota Aplicable:</small>
+                    <strong>Q{{ "%.2f"|format(estudiante.cuota_aplicable) }}</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Estado de Pago:</small>
+                    {% if al_dia %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Al día
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Moroso
+                    </span>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <div class="alert alert-info mb-0">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Los cambios se aplicarán inmediatamente al guardar.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ayuda -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Ayuda
+                </h6>
+            </div>
+            <div class="card-body">
+                <small>
+                    <ul class="mb-0 ps-3">
+                        <li>El carnet no se puede modificar</li>
+                        {% if not current_user.es_coordinador %}
+                        <li>Solo el coordinador puede cambiar el grado</li>
+                        {% endif %}
+                        <li>La cuota personalizada es opcional</li>
+                        <li>Las observaciones son privadas</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación del formulario
+    const form = document.querySelector('form');
+
+    form.addEventListener('submit', function(e) {
+        const nombre = document.getElementById('nombre').value.trim();
+
+        if (!nombre) {
+            e.preventDefault();
+            alert('El nombre del estudiante es requerido');
+            document.getElementById('nombre').focus();
+            return false;
+        }
+
+        // Confirmación de cambios
+        if (!confirm('¿Estás seguro de guardar los cambios?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Auto-formatear cuota personalizada
+    const cuotaInput = document.getElementById('cuota_personalizada');
+    cuotaInput.addEventListener('blur', function() {
+        if (this.value) {
+            this.value = parseFloat(this.value).toFixed(2);
+        }
+    });
+});
+</script>
+{% endblock %}

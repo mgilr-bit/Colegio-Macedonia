@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-chart-bar me-2 text-primary"></i>
+        Reportes y Estadísticas
+    </h1>
+    <p class="text-muted mb-0">Generación de reportes de pagos y análisis</p>
+</div>
+
+<!-- Tarjetas de reportes disponibles -->
+<div class="row">
+    <!-- Reporte por Grado -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 hover-shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-school fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Por Grado</h5>
+                        <small class="text-muted">Resumen por nivel</small>
+                    </div>
+                </div>
+                <p class="card-text">
+                    Visualiza el estado de pagos agrupados por grado académico,
+                    con estadísticas de estudiantes al día y morosos.
+                </p>
+                <a href="{{ url_for('reportes.por_grado') }}" class="btn btn-primary w-100">
+                    <i class="fas fa-eye me-2"></i>
+                    Ver Reporte
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reporte de Morosos -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 hover-shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Morosos</h5>
+                        <small class="text-muted">Pagos pendientes</small>
+                    </div>
+                </div>
+                <p class="card-text">
+                    Lista detallada de estudiantes con pagos pendientes,
+                    incluyendo información de contacto y montos adeudados.
+                </p>
+                <a href="{{ url_for('reportes.morosos') }}" class="btn btn-danger w-100">
+                    <i class="fas fa-list me-2"></i>
+                    Ver Morosos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reporte de Al Día -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 hover-shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Al Día</h5>
+                        <small class="text-muted">Pagos completos</small>
+                    </div>
+                </div>
+                <p class="card-text">
+                    Listado de estudiantes con sus pagos al día,
+                    con detalles de montos pagados y fechas de pago.
+                </p>
+                <a href="{{ url_for('reportes.al_dia') }}" class="btn btn-success w-100">
+                    <i class="fas fa-check me-2"></i>
+                    Ver Al Día
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de exportación rápida -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-download me-2"></i>
+            Exportación Rápida
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Descarga reportes en formato Excel para el mes actual</p>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <a href="{{ url_for('reportes.exportar_morosos') }}" class="btn btn-outline-danger w-100">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Exportar Morosos
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{{ url_for('reportes.exportar_al_dia') }}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Exportar Al Día
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{{ url_for('reportes.exportar_resumen_grados') }}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Resumen por Grados
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-pie me-2"></i>
+            Estadísticas Generales
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center" id="estadisticasGenerales">
+            <div class="col-md-3">
+                <div class="p-3">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h3 class="mb-0" id="totalEstudiantes">-</h3>
+                    <small class="text-muted">Total Estudiantes</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h3 class="mb-0" id="estudiantesAlDia">-</h3>
+                    <small class="text-muted">Al Día</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                    <h3 class="mb-0" id="estudiantesMorosos">-</h3>
+                    <small class="text-muted">Morosos</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3">
+                    <i class="fas fa-money-bill-wave fa-2x text-warning mb-2"></i>
+                    <h3 class="mb-0" id="recaudacionMes">-</h3>
+                    <small class="text-muted">Recaudación Mes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar estadísticas generales
+    fetch('/reportes/api/estadisticas-generales')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const stats = data.estadisticas;
+                document.getElementById('totalEstudiantes').textContent = stats.total_estudiantes;
+                document.getElementById('estudiantesAlDia').textContent = stats.estudiantes_al_dia;
+                document.getElementById('estudiantesMorosos').textContent = stats.estudiantes_morosos;
+                document.getElementById('recaudacionMes').textContent = `Q${stats.recaudacion_mes.toFixed(0)}`;
+            }
+        })
+        .catch(error => console.error('Error cargando estadísticas:', error));
+});
+</script>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

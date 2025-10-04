@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Estudiantes - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">
+            <i class="fas fa-users me-2 text-primary"></i>
+            Lista de Estudiantes
+        </h1>
+        <p class="text-muted mb-0">Total: {{ total_estudiantes }} estudiantes activos</p>
+    </div>
+    <div>
+        {% if current_user.puede_editar_estudiantes() %}
+        <button class="btn btn-outline-success me-2" onclick="exportarExcel()">
+            <i class="fas fa-file-excel me-2"></i>
+            Exportar
+        </button>
+        {% endif %}
+        <button class="btn btn-primary" onclick="mostrarEstadisticas()">
+            <i class="fas fa-chart-bar me-2"></i>
+            Estadísticas
+        </button>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('estudiantes.lista') }}" class="row g-3">
+            <!-- Búsqueda -->
+            <div class="col-md-4">
+                <label for="busqueda" class="form-label">Buscar estudiante</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           id="busqueda" 
+                           name="busqueda" 
+                           value="{{ busqueda }}"
+                           placeholder="Nombre o carnet">
+                </div>
+            </div>
+            
+            <!-- Filtro por grado -->
+            <div class="col-md-3">
+                <label for="grado_id" class="form-label">Grado</label>
+                <select class="form-select" id="grado_id" name="grado_id">
+                    <option value="">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" 
+                            {% if grado.id == grado_seleccionado %}selected{% endif %}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Estado de pago -->
+            <div class="col-md-3">
+                <label for="estado_pago" class="form-label">Estado de pago</label>
+                <select class="form-select" id="estado_pago" name="estado_pago">
+                    <option value="todos" {% if estado_pago == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="al_dia" {% if estado_pago == 'al_dia' %}selected{% endif %}>Al día</option>
+                    <option value="moroso" {% if estado_pago == 'moroso' %}selected{% endif %}>Morosos</option>
+                </select>
+            </div>
+            
+            <!-- Botones -->
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-1"></i>
+                    Filtrar
+                </button>
+                <a href="{{ url_for('estudiantes.lista') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de estudiantes -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>
+                Estudiantes
+                {% if estudiantes.items %}
+                <span class="badge bg-primary">{{ estudiantes.total }}</span>
+                {% endif %}
+            </h5>
+            
+            {% if estudiantes.pages > 1 %}
+            <small class="text-muted">
+                Página {{ estudiantes.page }} de {{ estudiantes.pages }}
+            </small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        {% if estudiantes.items %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Carnet</th>
+                        <th>Nombre</th>
+                        <th>Grado</th>
+                        <th>Sección</th>
+                        <th>Estado Pago</th>
+                        <th>Cuota</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estudiante in estudiantes.items %}
+                    {% set al_dia = estudiante.esta_al_dia() %}
+                    <tr>
+                        <td>
+                            <strong>{{ estudiante.carnet }}</strong>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ estudiante.nombre }}</strong>
+                                {% if estudiante.observaciones %}
+                                <br><small class="text-muted">
+                                    <i class="fas fa-sticky-note me-1"></i>
+                                    {{ estudiante.observaciones[:50] }}{% if estudiante.observaciones|length > 50 %}...{% endif %}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ estudiante.grado.nombre }}</span>
+                        </td>
+                        <td>
+                            {% if estudiante.seccion %}
+                                {{ estudiante.seccion }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if al_dia %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>
+                                    Al día
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Moroso
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>Q{{ "%.2f"|format(estudiante.cuota_aplicable) }}</strong>
+                            {% if estudiante.cuota_personalizada %}
+                                <br><small class="text-info">Personalizada</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('estudiantes.detalle', carnet=estudiante.carnet) }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Ver detalle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                {% if current_user.puede_editar_estudiantes() %}
+                                <a href="{{ url_for('estudiantes.editar', carnet=estudiante.carnet) }}" 
+                                   class="btn btn-sm btn-outline-secondary"
+                                   title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if estudiantes.pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Paginación de estudiantes">
+                <ul class="pagination justify-content-center mb-0">
+                    <!-- Página anterior -->
+                    {% if estudiantes.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('estudiantes.lista', page=estudiantes.prev_num, grado_id=grado_seleccionado, busqueda=busqueda, estado_pago=estado_pago) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Páginas -->
+                    {% for page_num in estudiantes.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != estudiantes.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('estudiantes.lista', page=page_num, grado_id=grado_seleccionado, busqueda=busqueda, estado_pago=estado_pago) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- Página siguiente -->
+                    {% if estudiantes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('estudiantes.lista', page=estudiantes.next_num, grado_id=grado_seleccionado, busqueda=busqueda, estado_pago=estado_pago) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- Sin resultados -->
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No se encontraron estudiantes</h5>
+            <p class="text-muted">
+                {% if busqueda or grado_seleccionado or estado_pago != 'todos' %}
+                    Intenta ajustar los filtros de búsqueda
+                {% else %}
+                    No hay estudiantes registrados en el sistema
+                {% endif %}
+            </p>
+            {% if busqueda or grado_seleccionado or estado_pago != 'todos' %}
+            <a href="{{ url_for('estudiantes.lista') }}" class="btn btn-primary">
+                <i class="fas fa-times me-2"></i>
+                Limpiar filtros
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de estadísticas -->
+<div class="modal fade" id="modalEstadisticas" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Estadísticas por Grado
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="estadisticasContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Autocompletado en búsqueda
+    const inputBusqueda = document.getElementById('busqueda');
+    let timeoutId;
+    
+    inputBusqueda.addEventListener('input', function() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            // Aquí se puede implementar autocompletado si se desea
+        }, 500);
+    });
+    
+    // Envío automático del formulario al cambiar filtros
+    document.getElementById('grado_id').addEventListener('change', function() {
+        this.form.submit();
+    });
+    
+    document.getElementById('estado_pago').addEventListener('change', function() {
+        this.form.submit();
+    });
+});
+
+function mostrarEstadisticas() {
+    const modal = new bootstrap.Modal(document.getElementById('modalEstadisticas'));
+    modal.show();
+    
+    // Cargar estadísticas
+    fetch('/estudiantes/api/estadisticas')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarTablaEstadisticas(data.estadisticas, data.mes_actual);
+            } else {
+                document.getElementById('estadisticasContent').innerHTML = 
+                    '<div class="alert alert-danger">Error cargando estadísticas</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('estadisticasContent').innerHTML = 
+                '<div class="alert alert-danger">Error de conexión</div>';
+        });
+}
+
+function mostrarTablaEstadisticas(estadisticas, mesActual) {
+    let html = `
+        <div class="mb-3">
+            <h6 class="text-muted">Estado de pagos para ${mesActual}</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Grado</th>
+                        <th>Total</th>
+                        <th>Al día</th>
+                        <th>Morosos</th>
+                        <th>% Al día</th>
+                        <th>Progreso</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    estadisticas.forEach(stat => {
+        html += `
+            <tr>
+                <td><strong>${stat.grado}</strong></td>
+                <td>${stat.total}</td>
+                <td><span class="badge bg-success">${stat.al_dia}</span></td>
+                <td><span class="badge bg-danger">${stat.morosos}</span></td>
+                <td>${stat.porcentaje_al_dia}%</td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" 
+                             role="progressbar" 
+                             style="width: ${stat.porcentaje_al_dia}%">
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    
+    document.getElementById('estadisticasContent').innerHTML = html;
+}
+
+function exportarExcel() {
+    // Aquí se implementaría la exportación
+    alert('Función de exportación próximamente');
+}
+</script>
+{% endblock %}

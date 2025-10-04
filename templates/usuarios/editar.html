@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('usuarios.lista') }}">Usuarios</a>
+            </li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-0">
+        <i class="fas fa-user-edit me-2 text-primary"></i>
+        Editar Usuario
+    </h1>
+    <p class="text-muted mb-0">{{ usuario.username }} - {{ usuario.nombre }}</p>
+</div>
+
+<!-- Formulario -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-cog me-2"></i>
+                    Información del Usuario
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('usuarios.editar', user_id=usuario.id) }}" id="formEditarUsuario">
+                    <!-- Username (solo lectura) -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuario</label>
+                        <input type="text" class="form-control" id="username"
+                               value="{{ usuario.username }}" disabled>
+                        <small class="text-muted">El nombre de usuario no se puede cambiar</small>
+                    </div>
+
+                    <!-- Nombre completo -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">
+                            Nombre Completo <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="nombre" name="nombre"
+                               value="{{ usuario.nombre }}" required maxlength="100">
+                    </div>
+
+                    <!-- Rol -->
+                    <div class="mb-3">
+                        <label for="rol" class="form-label">
+                            Rol <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="rol" name="rol" required>
+                            <option value="coordinador" {{ 'selected' if usuario.rol == 'coordinador' else '' }}>
+                                Coordinador
+                            </option>
+                            <option value="secretaria" {{ 'selected' if usuario.rol == 'secretaria' else '' }}>
+                                Secretaria
+                            </option>
+                            <option value="director" {{ 'selected' if usuario.rol == 'director' else '' }}>
+                                Director
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="activo" name="activo"
+                                   {{ 'checked' if usuario.activo else '' }}
+                                   {{ 'disabled' if usuario.id == current_user.id else '' }}>
+                            <label class="form-check-label" for="activo">
+                                Usuario Activo
+                            </label>
+                        </div>
+                        {% if usuario.id == current_user.id %}
+                        <small class="text-muted">No puedes desactivarte a ti mismo</small>
+                        {% endif %}
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Cambiar contraseña -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cambiar_password" name="cambiar_password">
+                            <label class="form-check-label" for="cambiar_password">
+                                <strong>Cambiar contraseña</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="passwordFields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password"
+                                   minlength="6" placeholder="Mínimo 6 caracteres">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password_confirm" class="form-label">
+                                Confirmar Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control" id="password_confirm" name="password_confirm"
+                                   minlength="6" placeholder="Repetir contraseña">
+                            <div id="passwordMatch" class="invalid-feedback">
+                                Las contraseñas no coinciden
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('usuarios.lista') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de información -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Usuario:</small>
+                    <strong>{{ usuario.username }}</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Rol Actual:</small>
+                    {% if usuario.es_coordinador %}
+                    <span class="badge bg-primary">Coordinador</span>
+                    {% elif usuario.es_secretaria %}
+                    <span class="badge bg-success">Secretaria</span>
+                    {% else %}
+                    <span class="badge bg-info">Director</span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Estado:</small>
+                    {% if usuario.activo %}
+                    <span class="badge bg-success">Activo</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Fecha Creación:</small>
+                    <strong>{{ usuario.fecha_creacion.strftime('%d/%m/%Y') if usuario.fecha_creacion else '-' }}</strong>
+                </div>
+
+                {% if usuario.cargas_realizadas %}
+                <hr>
+                <div class="mb-0">
+                    <small class="text-muted d-block">Cargas Realizadas:</small>
+                    <strong>{{ usuario.cargas_realizadas|length }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Seguridad
+                </h6>
+            </div>
+            <div class="card-body">
+                <small>
+                    <ul class="mb-0 ps-3">
+                        <li>Las contraseñas se encriptan automáticamente</li>
+                        <li>Solo se cambia si marcas la opción</li>
+                        <li>El usuario debe tener mínimo 6 caracteres</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formEditarUsuario');
+    const cambiarPasswordCheck = document.getElementById('cambiar_password');
+    const passwordFields = document.getElementById('passwordFields');
+    const password = document.getElementById('password');
+    const passwordConfirm = document.getElementById('password_confirm');
+
+    // Mostrar/ocultar campos de contraseña
+    cambiarPasswordCheck.addEventListener('change', function() {
+        if (this.checked) {
+            passwordFields.style.display = 'block';
+            password.required = true;
+            passwordConfirm.required = true;
+        } else {
+            passwordFields.style.display = 'none';
+            password.required = false;
+            passwordConfirm.required = false;
+            password.value = '';
+            passwordConfirm.value = '';
+        }
+    });
+
+    // Validar contraseñas
+    function validatePasswords() {
+        if (!cambiarPasswordCheck.checked) return true;
+
+        if (password.value !== passwordConfirm.value) {
+            passwordConfirm.setCustomValidity('Las contraseñas no coinciden');
+            passwordConfirm.classList.add('is-invalid');
+            return false;
+        } else {
+            passwordConfirm.setCustomValidity('');
+            passwordConfirm.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    password.addEventListener('input', validatePasswords);
+    passwordConfirm.addEventListener('input', validatePasswords);
+
+    // Validar al enviar
+    form.addEventListener('submit', function(e) {
+        if (cambiarPasswordCheck.checked) {
+            if (!validatePasswords()) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden');
+                passwordConfirm.focus();
+                return false;
+            }
+
+            if (password.value.length < 6) {
+                e.preventDefault();
+                alert('La contraseña debe tener al menos 6 caracteres');
+                password.focus();
+                return false;
+            }
+        }
+
+        return confirm('¿Guardar los cambios realizados?');
+    });
+});
+</script>
+{% endblock %}

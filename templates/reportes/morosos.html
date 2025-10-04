@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Estudiantes Morosos - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('reportes.index') }}">Reportes</a>
+            </li>
+            <li class="breadcrumb-item active">Morosos</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-0">
+        <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+        Estudiantes Morosos
+    </h1>
+    <p class="text-muted mb-0">Estudiantes con pagos pendientes</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('reportes.morosos') }}" class="row g-3">
+            <div class="col-md-3">
+                <label for="mes" class="form-label">Mes</label>
+                <select class="form-select" id="mes" name="mes">
+                    <option value="January" {{ 'selected' if mes_seleccionado == 'January' else '' }}>Enero</option>
+                    <option value="February" {{ 'selected' if mes_seleccionado == 'February' else '' }}>Febrero</option>
+                    <option value="March" {{ 'selected' if mes_seleccionado == 'March' else '' }}>Marzo</option>
+                    <option value="April" {{ 'selected' if mes_seleccionado == 'April' else '' }}>Abril</option>
+                    <option value="May" {{ 'selected' if mes_seleccionado == 'May' else '' }}>Mayo</option>
+                    <option value="June" {{ 'selected' if mes_seleccionado == 'June' else '' }}>Junio</option>
+                    <option value="July" {{ 'selected' if mes_seleccionado == 'July' else '' }}>Julio</option>
+                    <option value="August" {{ 'selected' if mes_seleccionado == 'August' else '' }}>Agosto</option>
+                    <option value="September" {{ 'selected' if mes_seleccionado == 'September' else '' }}>Septiembre</option>
+                    <option value="October" {{ 'selected' if mes_seleccionado == 'October' else '' }}>Octubre</option>
+                    <option value="November" {{ 'selected' if mes_seleccionado == 'November' else '' }}>Noviembre</option>
+                    <option value="December" {{ 'selected' if mes_seleccionado == 'December' else '' }}>Diciembre</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="anio" class="form-label">Año</label>
+                <select class="form-select" id="anio" name="anio">
+                    {% for year in range(2024, 2031) %}
+                    <option value="{{ year }}" {{ 'selected' if anio_seleccionado == year else '' }}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="grado_id" class="form-label">Grado (opcional)</label>
+                <select class="form-select" id="grado_id" name="grado_id">
+                    <option value="">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" {{ 'selected' if grado_seleccionado == grado.id else '' }}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ estudiantes|length }}</h3>
+                <small>Estudiantes Morosos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                <h3 class="mb-0">
+                    Q{{ "%.0f"|format(estudiantes|sum(attribute='cuota_aplicable')|default(0, true)) }}
+                </h3>
+                <small>Monto Pendiente Estimado</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ mes_seleccionado|mes_es }} {{ anio_seleccionado }}</h3>
+                <small>Período</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de morosos -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Lista de Estudiantes Morosos
+        </h5>
+        <a href="{{ url_for('reportes.exportar_morosos', mes=mes_seleccionado, anio=anio_seleccionado, grado_id=grado_seleccionado) }}"
+           class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-2"></i>
+            Exportar Excel
+        </a>
+    </div>
+    <div class="card-body">
+        {% if estudiantes %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Carnet</th>
+                        <th>Nombre</th>
+                        <th>Grado</th>
+                        <th>Sección</th>
+                        <th class="text-end">Cuota</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estudiante in estudiantes %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('estudiantes.detalle', carnet=estudiante.carnet) }}">
+                                {{ estudiante.carnet }}
+                            </a>
+                        </td>
+                        <td>{{ estudiante.nombre }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ estudiante.grado.nombre }}</span>
+                        </td>
+                        <td>{{ estudiante.seccion or '-' }}</td>
+                        <td class="text-end">
+                            <strong>Q{{ "%.2f"|format(estudiante.cuota_aplicable) }}</strong>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ estudiante.observaciones[:50] if estudiante.observaciones else '-' }}
+                                {% if estudiante.observaciones and estudiante.observaciones|length > 50 %}...{% endif %}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación si hay muchos resultados -->
+        {% if estudiantes|length > 50 %}
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle me-2"></i>
+            Mostrando {{ estudiantes|length }} estudiantes. Usa los filtros para refinar la búsqueda.
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="alert alert-success text-center">
+            <i class="fas fa-check-circle me-2"></i>
+            ¡Excelente! No hay estudiantes morosos para el período seleccionado.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

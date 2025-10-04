@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Usuario - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('usuarios.lista') }}">Usuarios</a>
+            </li>
+            <li class="breadcrumb-item active">Crear Nuevo</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-0">
+        <i class="fas fa-user-plus me-2 text-primary"></i>
+        Crear Nuevo Usuario
+    </h1>
+    <p class="text-muted mb-0">Registrar usuario en el sistema</p>
+</div>
+
+<!-- Formulario -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Información del Usuario
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('usuarios.crear') }}" id="formCrearUsuario">
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            Usuario <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username"
+                               required pattern="[a-zA-Z0-9_]+" maxlength="50"
+                               placeholder="Ej: jperez">
+                        <small class="text-muted">Solo letras, números y guión bajo. Sin espacios.</small>
+                    </div>
+
+                    <!-- Nombre completo -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">
+                            Nombre Completo <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="nombre" name="nombre"
+                               required maxlength="100"
+                               placeholder="Ej: Juan Pérez">
+                    </div>
+
+                    <!-- Rol -->
+                    <div class="mb-3">
+                        <label for="rol" class="form-label">
+                            Rol <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="rol" name="rol" required>
+                            <option value="">Seleccionar rol...</option>
+                            <option value="coordinador">Coordinador</option>
+                            <option value="secretaria">Secretaria</option>
+                            <option value="director">Director</option>
+                        </select>
+                        <small class="text-muted" id="rolDescription"></small>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            Contraseña <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password"
+                               required minlength="6"
+                               placeholder="Mínimo 6 caracteres">
+                        <small class="text-muted">La contraseña debe tener al menos 6 caracteres</small>
+                    </div>
+
+                    <!-- Confirmar contraseña -->
+                    <div class="mb-4">
+                        <label for="password_confirm" class="form-label">
+                            Confirmar Contraseña <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" class="form-control" id="password_confirm" name="password_confirm"
+                               required minlength="6"
+                               placeholder="Repetir contraseña">
+                        <div id="passwordMatch" class="invalid-feedback">
+                            Las contraseñas no coinciden
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('usuarios.lista') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Crear Usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de ayuda -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Permisos por Rol
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">
+                    <i class="fas fa-user-shield me-2"></i>
+                    Coordinador
+                </h6>
+                <ul class="small mb-3">
+                    <li>Gestionar usuarios</li>
+                    <li>Cargar archivos de pagos</li>
+                    <li>Editar estudiantes y grados</li>
+                    <li>Ver todos los reportes</li>
+                </ul>
+
+                <h6 class="text-success">
+                    <i class="fas fa-user-tie me-2"></i>
+                    Secretaria
+                </h6>
+                <ul class="small mb-3">
+                    <li>Cargar archivos de pagos</li>
+                    <li>Editar estudiantes</li>
+                    <li>Ver reportes básicos</li>
+                </ul>
+
+                <h6 class="text-info">
+                    <i class="fas fa-user-graduate me-2"></i>
+                    Director
+                </h6>
+                <ul class="small mb-3">
+                    <li>Ver reportes y estadísticas</li>
+                    <li>Consultar información</li>
+                    <li>Solo lectura</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-lock me-2"></i>
+                    Seguridad
+                </h6>
+            </div>
+            <div class="card-body">
+                <small>
+                    <ul class="mb-0 ps-3">
+                        <li>La contraseña se encripta automáticamente</li>
+                        <li>El usuario debe cambiarla en su primer acceso</li>
+                        <li>No se pueden ver contraseñas de otros usuarios</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formCrearUsuario');
+    const password = document.getElementById('password');
+    const passwordConfirm = document.getElementById('password_confirm');
+    const rolSelect = document.getElementById('rol');
+    const rolDescription = document.getElementById('rolDescription');
+
+    // Descripciones de roles
+    const rolDescriptions = {
+        'coordinador': 'Acceso completo al sistema, puede gestionar usuarios y todas las funciones.',
+        'secretaria': 'Puede cargar pagos, editar estudiantes y ver reportes básicos.',
+        'director': 'Solo consulta y visualización de reportes. Sin permisos de edición.'
+    };
+
+    // Mostrar descripción del rol
+    rolSelect.addEventListener('change', function() {
+        rolDescription.textContent = rolDescriptions[this.value] || '';
+    });
+
+    // Validar contraseñas
+    function validatePasswords() {
+        if (password.value !== passwordConfirm.value) {
+            passwordConfirm.setCustomValidity('Las contraseñas no coinciden');
+            passwordConfirm.classList.add('is-invalid');
+            return false;
+        } else {
+            passwordConfirm.setCustomValidity('');
+            passwordConfirm.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    password.addEventListener('input', validatePasswords);
+    passwordConfirm.addEventListener('input', validatePasswords);
+
+    // Validar al enviar
+    form.addEventListener('submit', function(e) {
+        if (!validatePasswords()) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden');
+            passwordConfirm.focus();
+            return false;
+        }
+
+        if (password.value.length < 6) {
+            e.preventDefault();
+            alert('La contraseña debe tener al menos 6 caracteres');
+            password.focus();
+            return false;
+        }
+
+        return confirm('¿Crear el usuario con estos datos?');
+    });
+
+    // Validar username en tiempo real
+    const username = document.getElementById('username');
+    username.addEventListener('input', function() {
+        this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    });
+});
+</script>
+{% endblock %}

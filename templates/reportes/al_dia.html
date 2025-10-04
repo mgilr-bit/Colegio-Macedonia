@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Estudiantes Al Día - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('reportes.index') }}">Reportes</a>
+            </li>
+            <li class="breadcrumb-item active">Al Día</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-0">
+        <i class="fas fa-check-circle me-2 text-success"></i>
+        Estudiantes Al Día
+    </h1>
+    <p class="text-muted mb-0">Estudiantes con pagos completos</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('reportes.al_dia') }}" class="row g-3">
+            <div class="col-md-3">
+                <label for="mes" class="form-label">Mes</label>
+                <select class="form-select" id="mes" name="mes">
+                    <option value="January" {{ 'selected' if mes_seleccionado == 'January' else '' }}>Enero</option>
+                    <option value="February" {{ 'selected' if mes_seleccionado == 'February' else '' }}>Febrero</option>
+                    <option value="March" {{ 'selected' if mes_seleccionado == 'March' else '' }}>Marzo</option>
+                    <option value="April" {{ 'selected' if mes_seleccionado == 'April' else '' }}>Abril</option>
+                    <option value="May" {{ 'selected' if mes_seleccionado == 'May' else '' }}>Mayo</option>
+                    <option value="June" {{ 'selected' if mes_seleccionado == 'June' else '' }}>Junio</option>
+                    <option value="July" {{ 'selected' if mes_seleccionado == 'July' else '' }}>Julio</option>
+                    <option value="August" {{ 'selected' if mes_seleccionado == 'August' else '' }}>Agosto</option>
+                    <option value="September" {{ 'selected' if mes_seleccionado == 'September' else '' }}>Septiembre</option>
+                    <option value="October" {{ 'selected' if mes_seleccionado == 'October' else '' }}>Octubre</option>
+                    <option value="November" {{ 'selected' if mes_seleccionado == 'November' else '' }}>Noviembre</option>
+                    <option value="December" {{ 'selected' if mes_seleccionado == 'December' else '' }}>Diciembre</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="anio" class="form-label">Año</label>
+                <select class="form-select" id="anio" name="anio">
+                    {% for year in range(2024, 2031) %}
+                    <option value="{{ year }}" {{ 'selected' if anio_seleccionado == year else '' }}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="grado_id" class="form-label">Grado (opcional)</label>
+                <select class="form-select" id="grado_id" name="grado_id">
+                    <option value="">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" {{ 'selected' if grado_seleccionado == grado.id else '' }}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ estudiantes|length }}</h3>
+                <small>Estudiantes Al Día</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                <h3 class="mb-0">
+                    Q{{ "%.0f"|format(estudiantes|map(attribute='1.total_pagado')|sum|default(0, true)) }}
+                </h3>
+                <small>Total Recaudado</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ mes_seleccionado|mes_es }} {{ anio_seleccionado }}</h3>
+                <small>Período</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de estudiantes al día -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Lista de Estudiantes Al Día
+        </h5>
+        <a href="{{ url_for('reportes.exportar_al_dia', mes=mes_seleccionado, anio=anio_seleccionado, grado_id=grado_seleccionado) }}"
+           class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-2"></i>
+            Exportar Excel
+        </a>
+    </div>
+    <div class="card-body">
+        {% if estudiantes %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Carnet</th>
+                        <th>Nombre</th>
+                        <th>Grado</th>
+                        <th>Sección</th>
+                        <th class="text-end">Total Pagado</th>
+                        <th>Fecha Pago</th>
+                        <th>Boleta</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estudiante, pago in estudiantes %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('estudiantes.detalle', carnet=estudiante.carnet) }}">
+                                {{ estudiante.carnet }}
+                            </a>
+                        </td>
+                        <td>{{ estudiante.nombre }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ estudiante.grado.nombre }}</span>
+                        </td>
+                        <td>{{ estudiante.seccion or '-' }}</td>
+                        <td class="text-end">
+                            <strong>Q{{ "%.2f"|format(pago.total_pagado) }}</strong>
+                        </td>
+                        <td>
+                            <small>{{ pago.fecha_pago.strftime('%d/%m/%Y') if pago.fecha_pago else '-' }}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ pago.boleta or '-' }}</small>
+                        </td>
+                        <td>
+                            {% if pago.efectivo and pago.efectivo > 0 %}
+                            <span class="badge bg-success">Efectivo</span>
+                            {% elif pago.cheque_propios and pago.cheque_propios > 0 %}
+                            <span class="badge bg-info">Cheque Propio</span>
+                            {% elif pago.cheque_locales and pago.cheque_locales > 0 %}
+                            <span class="badge bg-warning">Cheque Local</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Otro</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-secondary">
+                    <tr>
+                        <th colspan="4">TOTAL</th>
+                        <th class="text-end">
+                            <strong>Q{{ "%.2f"|format(estudiantes|map(attribute='1.total_pagado')|sum|default(0, true)) }}</strong>
+                        </th>
+                        <th colspan="3"></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Info si hay muchos resultados -->
+        {% if estudiantes|length > 50 %}
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle me-2"></i>
+            Mostrando {{ estudiantes|length }} estudiantes. Usa los filtros para refinar la búsqueda.
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No hay estudiantes con pagos registrados para el período seleccionado.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

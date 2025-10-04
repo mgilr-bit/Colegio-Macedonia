@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">
+            <i class="fas fa-users-cog me-2 text-primary"></i>
+            Gestión de Usuarios
+        </h1>
+        <p class="text-muted mb-0">Administración de usuarios del sistema</p>
+    </div>
+    <div>
+        <a href="{{ url_for('usuarios.crear') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>
+            Nuevo Usuario
+        </a>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ usuarios|length }}</h3>
+                <small>Total Usuarios</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-user-check fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ usuarios|selectattr('activo')|list|length }}</h3>
+                <small>Activos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-user-shield fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ usuarios|selectattr('rol', 'equalto', 'coordinador')|selectattr('activo')|list|length }}</h3>
+                <small>Coordinadores</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-user-tie fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ usuarios|selectattr('rol', 'equalto', 'secretaria')|selectattr('activo')|list|length }}</h3>
+                <small>Secretarias</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de usuarios -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Lista de Usuarios
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr class="{{ 'table-secondary' if not usuario.activo else '' }}">
+                        <td>
+                            <i class="fas fa-user-circle me-2 text-muted"></i>
+                            <strong>{{ usuario.username }}</strong>
+                            {% if usuario.id == current_user.id %}
+                            <span class="badge bg-info ms-1">Tú</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ usuario.nombre }}</td>
+                        <td>
+                            {% if usuario.es_coordinador %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-user-shield me-1"></i>
+                                Coordinador
+                            </span>
+                            {% elif usuario.es_secretaria %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-user-tie me-1"></i>
+                                Secretaria
+                            </span>
+                            {% elif usuario.es_director %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-user-graduate me-1"></i>
+                                Director
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.activo %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Activo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-ban me-1"></i>
+                                Inactivo
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ usuario.fecha_creacion.strftime('%d/%m/%Y %H:%M') if usuario.fecha_creacion else '-' }}
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('usuarios.editar', user_id=usuario.id) }}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if usuario.id != current_user.id and usuario.activo %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmarDesactivar({{ usuario.id }}, '{{ usuario.username }}')"
+                                        title="Desactivar">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if usuarios|length == 0 %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>
+            No hay usuarios registrados
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmación (oculto) -->
+<form id="formDesactivar" method="POST" style="display: none;">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarDesactivar(userId, username) {
+    if (confirm(`¿Estás seguro de desactivar al usuario "${username}"?\n\nEsta acción puede revertirse editando el usuario.`)) {
+        const form = document.getElementById('formDesactivar');
+        form.action = `/usuarios/${userId}/eliminar`;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

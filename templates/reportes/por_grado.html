@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte por Grado - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('reportes.index') }}">Reportes</a>
+            </li>
+            <li class="breadcrumb-item active">Por Grado</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-0">
+        <i class="fas fa-school me-2 text-primary"></i>
+        Reporte por Grado
+    </h1>
+    <p class="text-muted mb-0">Estado de pagos agrupado por grado académico</p>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('reportes.por_grado') }}" class="row g-3">
+            <div class="col-md-3">
+                <label for="mes" class="form-label">Mes</label>
+                <select class="form-select" id="mes" name="mes">
+                    <option value="January" {{ 'selected' if mes_seleccionado == 'January' else '' }}>Enero</option>
+                    <option value="February" {{ 'selected' if mes_seleccionado == 'February' else '' }}>Febrero</option>
+                    <option value="March" {{ 'selected' if mes_seleccionado == 'March' else '' }}>Marzo</option>
+                    <option value="April" {{ 'selected' if mes_seleccionado == 'April' else '' }}>Abril</option>
+                    <option value="May" {{ 'selected' if mes_seleccionado == 'May' else '' }}>Mayo</option>
+                    <option value="June" {{ 'selected' if mes_seleccionado == 'June' else '' }}>Junio</option>
+                    <option value="July" {{ 'selected' if mes_seleccionado == 'July' else '' }}>Julio</option>
+                    <option value="August" {{ 'selected' if mes_seleccionado == 'August' else '' }}>Agosto</option>
+                    <option value="September" {{ 'selected' if mes_seleccionado == 'September' else '' }}>Septiembre</option>
+                    <option value="October" {{ 'selected' if mes_seleccionado == 'October' else '' }}>Octubre</option>
+                    <option value="November" {{ 'selected' if mes_seleccionado == 'November' else '' }}>Noviembre</option>
+                    <option value="December" {{ 'selected' if mes_seleccionado == 'December' else '' }}>Diciembre</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="anio" class="form-label">Año</label>
+                <select class="form-select" id="anio" name="anio">
+                    {% for year in range(2024, 2031) %}
+                    <option value="{{ year }}" {{ 'selected' if anio_seleccionado == year else '' }}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="grado_id" class="form-label">Grado (opcional)</label>
+                <select class="form-select" id="grado_id" name="grado_id">
+                    <option value="">Todos los grados</option>
+                    {% for grado in grados %}
+                    <option value="{{ grado.id }}" {{ 'selected' if grado_seleccionado == grado.id else '' }}>
+                        {{ grado.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-table me-2"></i>
+            Resultados: {{ mes_seleccionado|mes_es }} {{ anio_seleccionado }}
+        </h5>
+        <a href="{{ url_for('reportes.exportar_resumen_grados', mes=mes_seleccionado, anio=anio_seleccionado) }}"
+           class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-2"></i>
+            Exportar Excel
+        </a>
+    </div>
+    <div class="card-body">
+        {% if resultados %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Grado</th>
+                        <th class="text-center">Total Estudiantes</th>
+                        <th class="text-center">Al Día</th>
+                        <th class="text-center">Morosos</th>
+                        <th class="text-center">% Al Día</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_estudiantes = 0 %}
+                    {% set total_al_dia = 0 %}
+                    {% set total_morosos = 0 %}
+
+                    {% for resultado in resultados %}
+                    {% set total_estudiantes = total_estudiantes + resultado.total_estudiantes %}
+                    {% set total_al_dia = total_al_dia + resultado.estudiantes_al_dia %}
+                    {% set total_morosos = total_morosos + resultado.estudiantes_morosos %}
+
+                    <tr>
+                        <td><strong>{{ resultado.grado }}</strong></td>
+                        <td class="text-center">{{ resultado.total_estudiantes }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-success">{{ resultado.estudiantes_al_dia }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-danger">{{ resultado.estudiantes_morosos }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% set porcentaje = (resultado.estudiantes_al_dia / resultado.total_estudiantes * 100) if resultado.total_estudiantes > 0 else 0 %}
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar {{ 'bg-success' if porcentaje >= 80 else 'bg-warning' if porcentaje >= 50 else 'bg-danger' }}"
+                                     role="progressbar"
+                                     style="width: {{ porcentaje }}%"
+                                     aria-valuenow="{{ porcentaje }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    {{ "%.1f"|format(porcentaje) }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('reportes.morosos', mes=mes_seleccionado, anio=anio_seleccionado, grado_id=loop.index) }}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   title="Ver morosos">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </a>
+                                <a href="{{ url_for('reportes.al_dia', mes=mes_seleccionado, anio=anio_seleccionado, grado_id=loop.index) }}"
+                                   class="btn btn-sm btn-outline-success"
+                                   title="Ver al día">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-secondary">
+                    <tr>
+                        <th>TOTALES</th>
+                        <th class="text-center">{{ total_estudiantes }}</th>
+                        <th class="text-center">
+                            <span class="badge bg-success">{{ total_al_dia }}</span>
+                        </th>
+                        <th class="text-center">
+                            <span class="badge bg-danger">{{ total_morosos }}</span>
+                        </th>
+                        <th class="text-center">
+                            {% set porcentaje_total = (total_al_dia / total_estudiantes * 100) if total_estudiantes > 0 else 0 %}
+                            <strong>{{ "%.1f"|format(porcentaje_total) }}%</strong>
+                        </th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>
+            No hay datos para mostrar con los filtros seleccionados
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Cargar Archivo de Pagos - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">
+            <i class="fas fa-upload me-2 text-primary"></i>
+            Cargar Archivo de Pagos
+        </h1>
+        <p class="text-muted mb-0">Procesar archivo Excel del banco con los pagos realizados</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Formulario de carga -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Subir Archivo Excel
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('pagos.procesar') }}" method="POST" enctype="multipart/form-data" id="formCarga">
+                    <div class="mb-4">
+                        <label for="archivo" class="form-label fw-semibold">
+                            <i class="fas fa-paperclip me-2"></i>
+                            Seleccionar archivo del banco
+                        </label>
+                        <input type="file" 
+                               class="form-control form-control-lg" 
+                               id="archivo" 
+                               name="archivo" 
+                               accept=".xlsx,.xls"
+                               required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Solo se permiten archivos Excel (.xlsx, .xls). Tamaño máximo: 16MB
+                        </div>
+                    </div>
+
+                    <!-- Vista previa del archivo -->
+                    <div id="vistaPrevia" class="mb-4" style="display: none;">
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-excel fa-2x me-3 text-success"></i>
+                                <div>
+                                    <h6 class="mb-1">Archivo seleccionado:</h6>
+                                    <p class="mb-0" id="nombreArchivo"></p>
+                                    <small class="text-muted" id="infoArchivo"></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetForm()">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="btnProcesar" disabled>
+                            <i class="fas fa-cogs me-2"></i>
+                            Procesar Archivo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Indicador de progreso -->
+        <div id="indicadorProgreso" class="card mt-4" style="display: none;">
+            <div class="card-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <h5>Procesando archivo...</h5>
+                <p class="text-muted mb-0">Por favor espera mientras procesamos los pagos del banco</p>
+                <div class="progress mt-3" style="height: 10px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Información y ayuda -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Información del Proceso
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">¿Qué hace este proceso?</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Lee el archivo Excel del banco
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Valida la información de cada pago
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Actualiza el estado de los estudiantes
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Evita pagos duplicados
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Genera reporte de errores
+                    </li>
+                </ul>
+
+                <h6 class="text-primary mt-4">Formato esperado:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="font-size: 0.75rem;">Columna</th>
+                                <th style="font-size: 0.75rem;">Requerida</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size: 0.75rem;">
+                            <tr>
+                                <td>CARNET</td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>NOMBRE</td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>MES PAGO</td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>TOTAL</td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>CUOTA</td>
+                                <td><i class="fas fa-minus text-muted"></i></td>
+                            </tr>
+                            <tr>
+                                <td>UTILES</td>
+                                <td><i class="fas fa-minus text-muted"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-warning mt-3">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Importante:</strong> Una vez procesado, no se puede deshacer. 
+                        Asegúrate de que el archivo sea correcto.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial reciente -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Cargas Recientes
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Últimas cargas de archivos realizadas</p>
+                
+                <!-- Aquí se mostrarían las cargas recientes -->
+                <div class="text-center text-muted">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <p class="small mb-0">No hay cargas recientes</p>
+                </div>
+                
+                <div class="d-grid mt-3">
+                    <a href="{{ url_for('pagos.historial') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list me-2"></i>
+                        Ver Historial Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const archivoInput = document.getElementById('archivo');
+    const btnProcesar = document.getElementById('btnProcesar');
+    const vistaPrevia = document.getElementById('vistaPrevia');
+    const nombreArchivo = document.getElementById('nombreArchivo');
+    const infoArchivo = document.getElementById('infoArchivo');
+    const formCarga = document.getElementById('formCarga');
+    const indicadorProgreso = document.getElementById('indicadorProgreso');
+
+    // Manejar selección de archivo
+    archivoInput.addEventListener('change', function(e) {
+        const archivo = e.target.files[0];
+        
+        if (archivo) {
+            // Validar tipo de archivo
+            const tiposPermitidos = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+                                   'application/vnd.ms-excel'];
+            
+            if (!tiposPermitidos.includes(archivo.type) && 
+                !archivo.name.toLowerCase().endsWith('.xlsx') && 
+                !archivo.name.toLowerCase().endsWith('.xls')) {
+                alert('Por favor selecciona un archivo Excel (.xlsx o .xls)');
+                resetForm();
+                return;
+            }
+
+            // Validar tamaño (16MB máximo)
+            const maxSize = 16 * 1024 * 1024;
+            if (archivo.size > maxSize) {
+                alert('El archivo es demasiado grande. Tamaño máximo: 16MB');
+                resetForm();
+                return;
+            }
+
+            // Mostrar vista previa
+            nombreArchivo.textContent = archivo.name;
+            infoArchivo.textContent = `Tamaño: ${formatBytes(archivo.size)} | Tipo: ${getFileExtension(archivo.name).toUpperCase()}`;
+            vistaPrevia.style.display = 'block';
+            btnProcesar.disabled = false;
+        } else {
+            resetForm();
+        }
+    });
+
+    // Manejar envío del formulario
+    formCarga.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!archivoInput.files[0]) {
+            alert('Por favor selecciona un archivo');
+            return;
+        }
+
+        // Mostrar indicador de progreso
+        document.querySelector('.card').style.display = 'none';
+        indicadorProgreso.style.display = 'block';
+
+        // Enviar formulario
+        this.submit();
+    });
+
+    // Función para resetear el formulario
+    window.resetForm = function() {
+        archivoInput.value = '';
+        vistaPrevia.style.display = 'none';
+        btnProcesar.disabled = true;
+    };
+
+    // Función para formatear bytes
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Función para obtener extensión de archivo
+    function getFileExtension(filename) {
+        return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
+    }
+
+    // Prevenir envío accidental del formulario con Enter
+    archivoInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

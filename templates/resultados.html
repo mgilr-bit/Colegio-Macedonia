@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados de Carga - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-line me-2 text-success"></i>
+            Resultados del Procesamiento
+        </h1>
+        <p class="text-muted mb-0">Archivo: {{ resultados.archivo if resultados and resultados.archivo is not none else 'Archivo del banco' }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('pagos.subir') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Nueva Carga
+        </a>
+    </div>
+</div>
+
+{% if not resultados %}
+<div class="alert alert-danger mt-4">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    Ocurrió un error al procesar el archivo. Por favor verifica el formato y vuelve a intentarlo.
+</div>
+{% endif %}
+
+<!-- Resumen de resultados -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-file-alt fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ resultados.total_filas if resultados and resultados.total_filas is not none else 0 }}</h3>
+                <small>Total de Filas</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ resultados.exitosos if resultados and resultados.exitosos is not none else 0 }}</h3>
+                <small>Pagos Registrados</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-copy fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ resultados.duplicados if resultados and resultados.duplicados is not none else 0 }}</h3>
+                <small>Duplicados</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ resultados.errores if resultados and resultados.errores is not none else 0 }}</h3>
+                <small>Errores</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Porcentaje de éxito -->
+{% if resultados and resultados.total_filas and resultados.total_filas > 0 %}
+{% set porcentaje_exito = (resultados.exitosos / resultados.total_filas * 100) if resultados.exitosos is not none else 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Porcentaje de Éxito
+                </h5>
+                <div class="progress mb-2" style="height: 25px;">
+                    <div class="progress-bar bg-success" 
+                         role="progressbar" 
+                         style="width: {{ porcentaje_exito|default(0, true)|int }}%">
+                        {{ "%.1f"|format(porcentaje_exito|default(0, true)) }}%
+                    </div>
+                </div>
+                <p class="text-muted mb-0">
+                    {{ resultados.exitosos }} de {{ resultados.total_filas }} registros procesados exitosamente
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Mensaje de éxito o información -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% if resultados and resultados.exitosos is not none and resultados.exitosos > 0 %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>¡Procesamiento Exitoso!</strong> 
+            Se registraron {{ resultados.exitosos }} pagos correctamente.
+            {% if resultados.duplicados is not none and resultados.duplicados > 0 %}
+            También se detectaron {{ resultados.duplicados }} pagos duplicados que fueron omitidos.
+            {% endif %}
+        </div>
+        {% elif resultados and resultados.errores is not none and resultados.errores > 0 %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Procesamiento con errores.</strong> 
+            Se encontraron {{ resultados.errores }} errores en el archivo.
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Archivo procesado.</strong> 
+            El archivo se procesó pero no se registraron nuevos pagos (posiblemente ya existían).
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagos nuevos registrados -->
+{% if resultados and resultados.nuevos_pagos %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Pagos Registrados ({{ resultados.nuevos_pagos|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Carnet</th>
+                                <th>Nombre</th>
+                                <th>Mes</th>
+                                <th>Año</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pago in resultados.nuevos_pagos[:50] %}
+                            <tr>
+                                <td>{{ pago.carnet }}</td>
+                                <td>{{ pago.nombre }}</td>
+                                <td>{{ pago.mes|mes_es }}</td>
+                                <td>{{ pago.anio }}</td>
+                                <td>Q{{ "%.2f"|format(pago.total) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    {% if resultados.nuevos_pagos|length > 50 %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Mostrando primeros 50 registros de {{ resultados.nuevos_pagos|length }} totales.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Errores encontrados -->
+{% if resultados and resultados.errores_detalle %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Errores Encontrados ({{ resultados.errores_detalle|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fila</th>
+                                <th>Carnet</th>
+                                <th>Nombre</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for error in resultados.errores_detalle %}
+                            <tr>
+                                <td>{{ error.fila }}</td>
+                                <td>{{ error.carnet }}</td>
+                                <td>{{ error.nombre }}</td>
+                                <td class="text-danger">{{ error.error }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Acciones -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('dashboard.panel') }}" class="btn btn-outline-primary">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Ver Dashboard
+            </a>
+            
+            <a href="{{ url_for('pagos.historial') }}" class="btn btn-outline-info">
+                <i class="fas fa-history me-2"></i>
+                Ver Historial
+            </a>
+            
+            <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-success">
+                <i class="fas fa-file-pdf me-2"></i>
+                Generar Reporte
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
