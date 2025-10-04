@@ -8,9 +8,8 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
+    pythonVersion: 3.10.12  # ← ESTA LÍNEA ES CLAVE
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.0
       - key: FLASK_ENV
         value: production
       - key: DATABASE_URL
@@ -24,3 +23,4 @@ databases:
     plan: free
     databaseName: colegio_macedonia
     user: colegio_user
+
